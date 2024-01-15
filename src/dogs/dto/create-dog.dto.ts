@@ -1,1 +1,5 @@
-export class CreateDogDto {}
+export class CreateDogDto {
+  name: string;
+
+  age: number;
+}
