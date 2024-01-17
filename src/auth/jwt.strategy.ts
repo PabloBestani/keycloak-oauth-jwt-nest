@@ -1,6 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy } from 'passport-jwt';
+import { Strategy, ExtractJwt } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { Roles } from 'src/common/definitions/roles.enum';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {}
+export class JwtStrategy extends PassportStrategy(Strategy, 'keycloak') {
+  constructor(configService: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('KEYCLOAK_SECRET'),
+      issuer: `${configService.get<string>('KEYCLOAK_URL')}/realms/${configService.get<string>('KEYCLOAK_REALM')}`,
+      audience: configService.get<string>('KEYCLOAK_CLIENT_ID'),
+    });
+  }
+
+  async validate({ email, role }: { email: string; role: Roles }) {
+    return {
+      email,
+      role,
+    };
+  }
+}
