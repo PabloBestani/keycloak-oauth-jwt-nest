@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
+import { AdminTokenData } from './definitions/interfaces';
 
 @Injectable()
 export class KeycloakService {
@@ -17,7 +18,7 @@ export class KeycloakService {
   password = this.configService.get<string>('KEYCLOAK_PASSWORD');
   clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
 
-  async getAdminToken(): Promise<string> {
+  async getAdminTokenData(): Promise<AdminTokenData> {
     const tokenUrl = `${this.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/token`;
     const payload = new URLSearchParams({
       client_id: this.clientId,
@@ -32,7 +33,7 @@ export class KeycloakService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       const response = await lastValueFrom(observable);
-      return response.data.access_token;
+      return response.data;
     } catch (error) {
       console.error(error);
     }
