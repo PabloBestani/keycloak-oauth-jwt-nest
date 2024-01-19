@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable()
-export class KeycloakAdminService {
+export class KeycloakService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
