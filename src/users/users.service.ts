@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CreateUserDto } from './dto/create-user.dto';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class UsersService {
@@ -17,11 +18,11 @@ export class UsersService {
   async getAllUsers(adminToken: string): Promise<any> {
     const url = `${this.keycloakAdminUrl}/users`;
     try {
-      const response = await this.httpService.get(url, {
+      const observable = this.httpService.get(url, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
-      console.log(response);
-      return response;
+      const response = await lastValueFrom(observable);
+      return response.data;
     } catch (error) {
       console.error(error);
       throw new Error('Error fetching users from Keycloak');
@@ -31,16 +32,19 @@ export class UsersService {
   async createUserInKeycloak(
     adminToken: string,
     createUserDto: CreateUserDto,
-  ): Promise<any> {
+  ): Promise<string> {
     const url = `${this.keycloakAdminUrl}/users`;
     try {
-      const response = await this.httpService.post(url, createUserDto, {
+      const observable = this.httpService.post(url, createUserDto, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
-      console.log(response);
-      return 'Lo logramoss, creamos un user en keycloak';
+      const response = await lastValueFrom(observable);
+      if (response) {
+        return `User ${createUserDto.username} created successfully.`;
+      }
     } catch (error) {
       console.error(error);
+      throw error;
     }
   }
 }
