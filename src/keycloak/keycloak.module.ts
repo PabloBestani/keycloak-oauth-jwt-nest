@@ -6,6 +6,6 @@ import { HttpModule } from '@nestjs/axios';
 @Module({
   imports: [HttpModule],
   providers: [KeycloakService, TokenService],
-  exports: [KeycloakService, TokenService],
+  exports: [KeycloakService],
 })
 export class KeycloakModule {}

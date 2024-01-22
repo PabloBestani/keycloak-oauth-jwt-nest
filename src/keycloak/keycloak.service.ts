@@ -2,23 +2,27 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
-import { AdminTokenData } from './definitions/interfaces';
+import { TokenService } from './token.service';
 
 @Injectable()
 export class KeycloakService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly tokenService: TokenService,
   ) {}
 
-  keycloakUrl = this.configService.get<string>('KEYCLOAK_URL');
-  realm = this.configService.get<string>('KEYCLOAK_REALM');
-  clientId = this.configService.get<string>('KEYCLOAK_CLIENT_ID');
-  username = this.configService.get<string>('KEYCLOAK_USERNAME');
-  password = this.configService.get<string>('KEYCLOAK_PASSWORD');
-  clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
+  private keycloakUrl = this.configService.get<string>('KEYCLOAK_URL');
+  private realm = this.configService.get<string>('KEYCLOAK_REALM');
+  private clientId = this.configService.get<string>('KEYCLOAK_CLIENT_ID');
+  private username = this.configService.get<string>('KEYCLOAK_USERNAME');
+  private password = this.configService.get<string>('KEYCLOAK_PASSWORD');
+  private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
 
-  async getAdminTokenData(): Promise<AdminTokenData> {
+  async getAdminToken(): Promise<string> {
+    const activeToken = this.tokenService.getActiveAdminToken();
+    if (activeToken) return activeToken;
+
     const tokenUrl = `${this.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/token`;
     const payload = new URLSearchParams({
       client_id: this.clientId,
