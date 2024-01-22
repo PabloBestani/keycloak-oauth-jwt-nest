@@ -2,7 +2,10 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
+import { AdminTokenData } from './definitions/interfaces';
 import { TokenService } from './token.service';
+import { KeycloakUserInterface } from 'src/common/definitions/interfaces';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class KeycloakService {
@@ -18,8 +21,9 @@ export class KeycloakService {
   private username = this.configService.get<string>('KEYCLOAK_USERNAME');
   private password = this.configService.get<string>('KEYCLOAK_PASSWORD');
   private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
+  private keycloakAdminUrl = `${this.keycloakUrl}/admin/realms/${this.realm}`;
 
-  async getAdminToken(): Promise<string> {
+  private async getAdminToken(): Promise<string> {
     const activeToken = this.tokenService.getActiveAdminToken();
     if (activeToken) return activeToken;
 
@@ -37,9 +41,44 @@ export class KeycloakService {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
       const response = await lastValueFrom(observable);
+      const tokenData: AdminTokenData = response.data;
+      this.tokenService.updateTokenData(tokenData);
+      return tokenData.access_token;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getAllUsers(): Promise<KeycloakUserInterface[]> {
+    const adminToken = await this.getAdminToken();
+    const url = `${this.keycloakAdminUrl}/users`;
+
+    try {
+      const observable = this.httpService.get(url, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      const response = await lastValueFrom(observable);
       return response.data;
     } catch (error) {
       console.error(error);
+      throw new Error('Error fetching users from Keycloak');
+    }
+  }
+
+  async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
+    const adminToken = await this.getAdminToken();
+    const url = `${this.keycloakAdminUrl}/users`;
+    try {
+      const observable = this.httpService.post(url, createUserDto, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      const response = await lastValueFrom(observable);
+      if (response) {
+        return `User ${createUserDto.username} created successfully.`;
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
     }
   }
 }
