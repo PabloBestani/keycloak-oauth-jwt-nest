@@ -1,17 +1,15 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { lastValueFrom } from 'rxjs';
 import { AdminTokenData } from './definitions/interfaces';
 import { TokenService } from './token.service';
 import { KeycloakUserInterface } from 'src/common/definitions/interfaces';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { HttpMethod } from './definitions/enums';
+import { HttpMethod } from 'src/common/definitions/enums';
+import { httpRequest } from 'src/common/utils/http';
 
 @Injectable()
 export class KeycloakService {
   constructor(
-    private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     private readonly tokenService: TokenService,
   ) {}
@@ -23,47 +21,6 @@ export class KeycloakService {
   private password = this.configService.get<string>('KEYCLOAK_PASSWORD');
   private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
   private keycloakAdminUrl = `${this.keycloakUrl}/admin/realms/${this.realm}`;
-
-  private async httpRequest(
-    method: HttpMethod,
-    url: string,
-    options: object,
-    body: string | object,
-  ): Promise<any>;
-  private async httpRequest(
-    method: HttpMethod,
-    url: string,
-    options: object,
-  ): Promise<any>;
-
-  private async httpRequest(
-    method: HttpMethod,
-    url: string,
-    options?: object,
-    body?: string | object,
-  ): Promise<any> {
-    try {
-      if (method === HttpMethod.GET) {
-        const observable = this.httpService.get(url, options);
-        const response = await lastValueFrom(observable);
-        if (!response)
-          throw new Error(
-            `Error attempting to get data (KeycloakService/sendRequest)`,
-          );
-        return response;
-      } else {
-        const observable = this.httpService[method](url, body, options);
-        const response = await lastValueFrom(observable);
-        if (!response)
-          throw new Error(
-            `Error attempting to ${method} data (KeycloakService/sendRequest)`,
-          );
-        return response;
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
 
   private async getAdminToken(): Promise<string> {
     const activeToken = this.tokenService.getActiveAdminToken();
@@ -82,7 +39,7 @@ export class KeycloakService {
     };
 
     try {
-      const response = await this.httpRequest(
+      const response = await httpRequest(
         HttpMethod.POST,
         tokenUrl,
         options,
@@ -105,7 +62,7 @@ export class KeycloakService {
     };
 
     try {
-      const response = await this.httpRequest(HttpMethod.GET, url, options);
+      const response = await httpRequest(HttpMethod.GET, url, options);
       return response.data;
     } catch (error) {
       console.error(error);
@@ -120,7 +77,7 @@ export class KeycloakService {
       headers: { Authorization: `Bearer ${adminToken}` },
     };
     try {
-      const response = await this.httpRequest(
+      const response = await httpRequest(
         HttpMethod.POST,
         url,
         options,
