@@ -1,6 +1,7 @@
 import { HttpMethod } from '../definitions/enums';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { AxiosResponse } from 'axios';
 
 const httpService = new HttpService();
 
@@ -9,19 +10,19 @@ export async function httpRequest(
   url: string,
   options: object,
   body: string | object,
-): Promise<any>;
+): Promise<AxiosResponse>;
 export async function httpRequest(
   method: HttpMethod,
   url: string,
   options: object,
-): Promise<any>;
+): Promise<AxiosResponse>;
 
 export async function httpRequest(
   method: HttpMethod,
   url: string,
   options?: object,
   body?: string | object,
-): Promise<any> {
+): Promise<AxiosResponse> {
   try {
     if (method === HttpMethod.GET) {
       const observable = httpService.get(url, options);
