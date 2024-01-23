@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { Roles } from 'src/common/definitions/roles.enum';
+import { Role } from 'src/common/definitions/enums';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'keycloak') {
@@ -16,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'keycloak') {
     });
   }
 
-  async validate({ email, role }: { email: string; role: Roles }) {
+  async validate({ email, role }: { email: string; role: Role }) {
     return {
       email,
       role,
