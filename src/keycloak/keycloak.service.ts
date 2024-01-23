@@ -21,6 +21,7 @@ export class KeycloakService {
   private password = this.configService.get<string>('KEYCLOAK_PASSWORD');
   private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
   private keycloakAdminUrl = `${this.keycloakUrl}/admin/realms/${this.realm}`;
+  private usersUrl = `${this.keycloakAdminUrl}/users`;
 
   private async getAdminToken(): Promise<string> {
     const activeToken = this.tokenService.getActiveAdminToken();
@@ -56,13 +57,16 @@ export class KeycloakService {
 
   async getAllUsers(): Promise<KeycloakUserInterface[]> {
     const adminToken = await this.getAdminToken();
-    const url = `${this.keycloakAdminUrl}/users`;
     const options = {
       headers: { Authorization: `Bearer ${adminToken}` },
     };
 
     try {
-      const response = await httpRequest(HttpMethod.GET, url, options);
+      const response = await httpRequest(
+        HttpMethod.GET,
+        this.usersUrl,
+        options,
+      );
       return response.data;
     } catch (error) {
       console.error(error);
@@ -72,14 +76,13 @@ export class KeycloakService {
 
   async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
     const adminToken = await this.getAdminToken();
-    const url = `${this.keycloakAdminUrl}/users`;
     const options = {
       headers: { Authorization: `Bearer ${adminToken}` },
     };
     try {
       const response = await httpRequest(
         HttpMethod.POST,
-        url,
+        this.usersUrl,
         options,
         createUserDto,
       );
