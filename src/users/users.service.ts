@@ -11,6 +11,10 @@ export class UsersService {
     return await this.keycloakService.getAllUsers();
   }
 
+  async getUserByUsername(username: string): Promise<KeycloakUserInterface> {
+    return await this.keycloakService.getUserByUsername(username);
+  }
+
   async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
     return await this.keycloakService.createUserInKeycloak(createUserDto);
   }

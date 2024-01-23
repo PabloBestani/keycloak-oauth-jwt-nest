@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AdminTokenData } from './definitions/interfaces';
 import { TokenService } from './token.service';
@@ -71,6 +71,23 @@ export class KeycloakService {
     } catch (error) {
       console.error(error);
       throw new Error('Error fetching users from Keycloak');
+    }
+  }
+
+  async getUserByUsername(username: string): Promise<KeycloakUserInterface> {
+    const adminToken = await this.getAdminToken();
+    const url = `${this.usersUrl}?username=${username}`;
+    const options = {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    };
+    try {
+      const response = await httpRequest(HttpMethod.GET, url, options);
+      const user = response.data;
+      if (!user) throw new NotFoundException();
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new Error('Error fetching user from Keycloak');
     }
   }
 
