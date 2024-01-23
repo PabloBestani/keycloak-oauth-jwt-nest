@@ -6,6 +6,7 @@ import { AdminTokenData } from './definitions/interfaces';
 import { TokenService } from './token.service';
 import { KeycloakUserInterface } from 'src/common/definitions/interfaces';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { HttpMethod } from './definitions/enums';
 
 @Injectable()
 export class KeycloakService {
@@ -23,6 +24,47 @@ export class KeycloakService {
   private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
   private keycloakAdminUrl = `${this.keycloakUrl}/admin/realms/${this.realm}`;
 
+  private async httpRequest(
+    method: HttpMethod,
+    url: string,
+    options: object,
+    body: string | object,
+  ): Promise<any>;
+  private async httpRequest(
+    method: HttpMethod,
+    url: string,
+    options: object,
+  ): Promise<any>;
+
+  private async httpRequest(
+    method: HttpMethod,
+    url: string,
+    options?: object,
+    body?: string | object,
+  ): Promise<any> {
+    try {
+      if (method === HttpMethod.GET) {
+        const observable = this.httpService.get(url, options);
+        const response = await lastValueFrom(observable);
+        if (!response)
+          throw new Error(
+            `Error attempting to get data (KeycloakService/sendRequest)`,
+          );
+        return response;
+      } else {
+        const observable = this.httpService[method](url, body, options);
+        const response = await lastValueFrom(observable);
+        if (!response)
+          throw new Error(
+            `Error attempting to ${method} data (KeycloakService/sendRequest)`,
+          );
+        return response;
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
   private async getAdminToken(): Promise<string> {
     const activeToken = this.tokenService.getActiveAdminToken();
     if (activeToken) return activeToken;
@@ -35,14 +77,20 @@ export class KeycloakService {
       client_secret: this.clientSecret,
       grant_type: 'password',
     });
+    const options = {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    };
 
     try {
-      const observable = this.httpService.post(tokenUrl, payload.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-      const response = await lastValueFrom(observable);
+      const response = await this.httpRequest(
+        HttpMethod.POST,
+        tokenUrl,
+        options,
+        payload.toString(),
+      );
       const tokenData: AdminTokenData = response.data;
       this.tokenService.updateTokenData(tokenData);
+
       return tokenData.access_token;
     } catch (error) {
       console.error(error);
@@ -52,12 +100,12 @@ export class KeycloakService {
   async getAllUsers(): Promise<KeycloakUserInterface[]> {
     const adminToken = await this.getAdminToken();
     const url = `${this.keycloakAdminUrl}/users`;
+    const options = {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    };
 
     try {
-      const observable = this.httpService.get(url, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      const response = await lastValueFrom(observable);
+      const response = await this.httpRequest(HttpMethod.GET, url, options);
       return response.data;
     } catch (error) {
       console.error(error);
@@ -68,11 +116,16 @@ export class KeycloakService {
   async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
     const adminToken = await this.getAdminToken();
     const url = `${this.keycloakAdminUrl}/users`;
+    const options = {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    };
     try {
-      const observable = this.httpService.post(url, createUserDto, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
-      const response = await lastValueFrom(observable);
+      const response = await this.httpRequest(
+        HttpMethod.POST,
+        url,
+        options,
+        createUserDto,
+      );
       if (response) {
         return `User ${createUserDto.username} created successfully.`;
       }
