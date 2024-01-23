@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { KeycloakConfigService } from './config.service';
 import { AdminTokenData } from './definitions/interfaces';
 import { TokenService } from './token.service';
 import { KeycloakUserInterface } from 'src/common/definitions/interfaces';
@@ -10,24 +10,24 @@ import { httpRequest } from 'src/common/utils/http';
 @Injectable()
 export class KeycloakService {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly keycloakConfigService: KeycloakConfigService,
     private readonly tokenService: TokenService,
   ) {}
 
-  private keycloakUrl = this.configService.get<string>('KEYCLOAK_URL');
-  private realm = this.configService.get<string>('KEYCLOAK_REALM');
-  private clientId = this.configService.get<string>('KEYCLOAK_CLIENT_ID');
-  private username = this.configService.get<string>('KEYCLOAK_USERNAME');
-  private password = this.configService.get<string>('KEYCLOAK_PASSWORD');
-  private clientSecret = this.configService.get<string>('KEYCLOAK_SECRET');
-  private keycloakAdminUrl = `${this.keycloakUrl}/admin/realms/${this.realm}`;
-  private usersUrl = `${this.keycloakAdminUrl}/users`;
+  private baseUrl = this.keycloakConfigService.getBaseUrl();
+  private realm = this.keycloakConfigService.getRealm();
+  private clientId = this.keycloakConfigService.getClientId();
+  private username = this.keycloakConfigService.getUsername();
+  private password = this.keycloakConfigService.getPassword();
+  private clientSecret = this.keycloakConfigService.getClientSecret();
+  private adminUrl = `${this.baseUrl}/admin/realms/${this.realm}`;
+  private usersUrl = `${this.adminUrl}/users`;
 
   private async getAdminToken(): Promise<string> {
     const activeToken = this.tokenService.getActiveAdminToken();
     if (activeToken) return activeToken;
 
-    const tokenUrl = `${this.keycloakUrl}/realms/${this.realm}/protocol/openid-connect/token`;
+    const tokenUrl = `${this.baseUrl}/realms/${this.realm}/protocol/openid-connect/token`;
     const payload = new URLSearchParams({
       client_id: this.clientId,
       username: this.username,
