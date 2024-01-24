@@ -20,7 +20,9 @@ export class UsersService {
     return await this.keycloakService.getUserById(id);
   }
 
-  async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
+  async createUserInKeycloak(
+    createUserDto: CreateUserDto,
+  ): Promise<KeycloakUserInterface> {
     return await this.keycloakService.createUserInKeycloak(createUserDto);
   }
 

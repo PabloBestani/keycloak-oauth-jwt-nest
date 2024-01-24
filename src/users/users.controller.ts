@@ -22,7 +22,9 @@ export class UsersController {
   }
 
   @Post()
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<string> {
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<KeycloakUserInterface> {
     return await this.usersService.createUserInKeycloak(createUserDto);
   }
 

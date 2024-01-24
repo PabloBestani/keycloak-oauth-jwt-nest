@@ -109,21 +109,18 @@ export class KeycloakService {
     }
   }
 
-  async createUserInKeycloak(createUserDto: CreateUserDto): Promise<string> {
+  async createUserInKeycloak(
+    createUserDto: CreateUserDto,
+  ): Promise<KeycloakUserInterface> {
     const adminToken = await this.getAdminToken();
     const options = {
       headers: { Authorization: `Bearer ${adminToken}` },
     };
     try {
-      const response = await httpRequest(
-        HttpMethod.POST,
-        this.usersUrl,
-        options,
-        createUserDto,
-      );
-      if (response) {
-        return `User ${createUserDto.username} created successfully.`;
-      }
+      await httpRequest(HttpMethod.POST, this.usersUrl, options, createUserDto);
+
+      const newUser = await this.getUserByUsername(createUserDto.username);
+      return newUser;
     } catch (error) {
       console.error(error);
       throw error;
