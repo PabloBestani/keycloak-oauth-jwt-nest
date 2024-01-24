@@ -6,6 +6,7 @@ import { KeycloakUserInterface } from 'src/common/definitions/interfaces';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { HttpMethod } from 'src/common/definitions/enums';
 import { httpRequest } from 'src/common/utils/http';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 @Injectable()
 export class KeycloakService {
@@ -74,6 +75,23 @@ export class KeycloakService {
     }
   }
 
+  async getUserById(id: string): Promise<KeycloakUserInterface> {
+    const adminToken = await this.getAdminToken();
+    const url = `${this.usersUrl}/${id}`;
+    const options = {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    };
+    try {
+      const response = await httpRequest(HttpMethod.GET, url, options);
+      const user = response.data;
+      if (!user) throw new NotFoundException();
+      return user;
+    } catch (error) {
+      console.error(error);
+      throw new Error('Error fetching user from Keycloak.');
+    }
+  }
+
   async getUserByUsername(username: string): Promise<KeycloakUserInterface> {
     const adminToken = await this.getAdminToken();
     const url = `${this.usersUrl}?username=${username}`;
@@ -109,6 +127,25 @@ export class KeycloakService {
     } catch (error) {
       console.error(error);
       throw error;
+    }
+  }
+
+  async updateUserInKeycloak(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<any> {
+    const adminToken = await this.getAdminToken();
+    const url = `${this.usersUrl}/${id}`;
+    const options = {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    };
+    try {
+      await httpRequest(HttpMethod.PUT, url, options, updateUserDto);
+      const updatedUser = await this.getUserById(id);
+      return updatedUser;
+    } catch (error) {
+      console.error(error);
+      throw new Error('Error updating user in keycloak.');
     }
   }
 }
